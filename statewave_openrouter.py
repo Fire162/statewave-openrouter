@@ -29,7 +29,7 @@ log = logging.getLogger("statewave_openrouter")
 
 OPENROUTER_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1").rstrip("/")
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "")
-STATEWAVE_URL = os.getenv("STATEWAVE_URL", "http://localhost:8000").rstrip("/")
+STATEWAVE_URL = os.getenv("STATEWAVE_URL", "http://localhost:8100").rstrip("/")
 STATEWAVE_KEY = os.getenv("STATEWAVE_API_KEY", "")
 # HS256 secret for verifying inbound `X-Statewave-Token` JWTs. Set it and every
 # chat call needs a valid token (closes the open-port credit drain), and the
