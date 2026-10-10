@@ -295,7 +295,7 @@ names whichever subject it is acting for.
 # The proxy reads the secret from .env; this shell has to know it too.
 export PROXY_JWT_SECRET='the same secret you put in .env'
 
-TOKEN=$(python -c "import jwt; print(jwt.encode({'sub':'user:42'}, '$PROXY_JWT_SECRET', algorithm='HS256'))")
+TOKEN=$(python -c "import jwt, time; print(jwt.encode({'sub': 'user:42', 'exp': int(time.time()) + 3600}, '$PROXY_JWT_SECRET', algorithm='HS256'))")
 
 curl http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
