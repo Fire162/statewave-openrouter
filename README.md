@@ -75,7 +75,7 @@ works at all:
 | Variable | Set it to |
 | --- | --- |
 | `OPENROUTER_API_KEY` | Your OpenRouter key. Only used when the caller sends no `Authorization` header of its own. |
-| `STATEWAVE_URL` | Where your Statewave server is. Defaults to `http://localhost:8000`. |
+| `STATEWAVE_URL` | Where your Statewave server is. Defaults to `http://localhost:8100`. |
 | `STATEWAVE_TRUST_CLIENT_SUBJECT=1` **or** `PROXY_JWT_SECRET=...` | How the proxy decides which subject a request may touch. **Pick one** - see [Authenticating the subject](#authenticating-the-subject). |
 
 > [!NOTE]
@@ -93,7 +93,7 @@ uvicorn statewave_openrouter:app --env-file .env --port 8080
 > [!IMPORTANT]
 > `--env-file` is not optional. The proxy reads plain environment variables
 > and does not load `.env` by itself. Leave the flag off and it starts with
-> defaults - no OpenRouter key, Statewave assumed on `localhost:8000` - and the
+> defaults - no OpenRouter key, Statewave assumed on `localhost:8100` - and the
 > failures look like configuration you *did* set being ignored.
 
 <details>
@@ -113,7 +113,7 @@ docker run --rm -p 8080:8080 --env-file .env \
 ```
 
 Note that `localhost` inside a container is the container. If Statewave runs
-on your host, use `STATEWAVE_URL=http://host.docker.internal:8000`. On Docker
+on your host, use `STATEWAVE_URL=http://host.docker.internal:8100`. On Docker
 for Linux that name does not resolve on its own, so add
 `--add-host=host.docker.internal:host-gateway` to the `docker run`.
 </details>
@@ -325,7 +325,7 @@ Everything is environment variables. `.env.example` is the annotated copy.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `STATEWAVE_URL` | `http://localhost:8000` | Statewave server |
+| `STATEWAVE_URL` | `http://localhost:8100` | Statewave server |
 | `STATEWAVE_API_KEY` | - | Sent as `X-API-Key` |
 | `STATEWAVE_TENANT_ID` | - | Pinned tenant; when set, overrides any client `X-Tenant-ID` header |
 | `STATEWAVE_CONTEXT_TOKENS` | `1500` | Token budget for the injected bundle |
@@ -383,7 +383,7 @@ closes, since that is the only place a turn exists before Statewave has it.
 | Memory went empty after a config change | Memories are scoped per tenant, and the tenant changed | Put `STATEWAVE_TENANT_ID` back to what it was, or leave it unset if it always was. The same subject under a different tenant is a different memory |
 | Config you set appears ignored | `.env` is not read automatically | Start with `uvicorn ... --env-file .env`, or export the variables |
 | Log: `statewave rejected the gateway (401)` | Statewave refused the proxy itself | Check `STATEWAVE_API_KEY`, and `STATEWAVE_CALLER_ID` / `STATEWAVE_CALLER_TYPE` on tenants requiring caller identity |
-| Container cannot reach Statewave | `localhost` inside a container is the container | `STATEWAVE_URL=http://host.docker.internal:8000` |
+| Container cannot reach Statewave | `localhost` inside a container is the container | `STATEWAVE_URL=http://host.docker.internal:8100` |
 
 ---
 

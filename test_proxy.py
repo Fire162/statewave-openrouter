@@ -747,3 +747,10 @@ async def test_startup_is_quiet_when_statewave_is_current(monkeypatch, caplog):
     with caplog.at_level("WARNING"):
         await sw._warn_if_statewave_outdated()
     assert caplog.text == ""
+
+
+def test_default_statewave_url_port(monkeypatch):
+    monkeypatch.delenv("STATEWAVE_URL", raising=False)
+    assert "8100" in sw.STATEWAVE_URL
+    assert sw.STATEWAVE_URL == "http://localhost:8100"
+
