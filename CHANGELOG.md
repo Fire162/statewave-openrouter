@@ -13,6 +13,11 @@ All notable changes to this project are documented here. Format loosely follows
   no tenant at all, rather than falling back to the header.
 
 ### Fixed
+- A failed `/v1/memories/compile` after a turn (`STATEWAVE_COMPILE_AFTER_TURN=1`),
+  such as a 401, 422 or 500, is now logged as `statewave compile failed for
+  <subject>` instead of being dropped silently. It stays best effort: the chat
+  and the stored episode are unaffected, and no compile is attempted when the
+  episode write itself failed.
 - A JSON array or string request body (valid JSON, not an object) no longer
   500s; it is rejected with `400 statewave_bad_request` before
   `_resolve_subject` touches it.

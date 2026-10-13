@@ -316,6 +316,60 @@ async def test_statewave_down_still_answers(calls, proxy, monkeypatch, trusted):
     assert forwarded["messages"] == [{"role": "user", "content": "coffee?"}]
 
 
+def compile_replies(monkeypatch, status):
+    """Make the fake Statewave answer `status` to memory compiles, passing everything else through."""
+    inner = sw.client._transport.handler
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/memories/compile":
+            inner(request)  # keep it in the recorded calls
+            return httpx.Response(status, json={})
+        return inner(request)
+
+    monkeypatch.setattr(sw, "client", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+
+
+async def chat_with_subject(proxy):
+    response = await proxy.post(
+        "/v1/chat/completions",
+        headers={"X-Statewave-Subject": "user:42"},
+        json={"model": "x", "messages": [{"role": "user", "content": "coffee?"}]},
+    )
+    await drain()
+    return response
+
+
+async def test_failed_compile_after_turn_is_logged(calls, proxy, monkeypatch, trusted, caplog):
+    monkeypatch.setattr(sw, "COMPILE_AFTER_TURN", True)
+    compile_replies(monkeypatch, 500)
+    with caplog.at_level("WARNING"):
+        response = await chat_with_subject(proxy)
+    # Best effort: the chat still succeeds and the episode was stored.
+    assert response.status_code == 200
+    assert sent_to(calls, "/v1/episodes")
+    assert sent_to(calls, "/v1/memories/compile")
+    assert "compile failed for user:42" in caplog.text
+    assert "500" in caplog.text
+
+
+async def test_successful_compile_after_turn_logs_nothing(calls, proxy, monkeypatch, trusted, caplog):
+    monkeypatch.setattr(sw, "COMPILE_AFTER_TURN", True)
+    compile_replies(monkeypatch, 202)
+    with caplog.at_level("WARNING"):
+        await chat_with_subject(proxy)
+    assert sent_to(calls, "/v1/memories/compile")
+    assert "compile failed" not in caplog.text
+
+
+async def test_no_compile_when_the_episode_write_fails(calls, proxy, monkeypatch, trusted, caplog):
+    monkeypatch.setattr(sw, "COMPILE_AFTER_TURN", True)
+    monkeypatch.setattr(sw, "STATEWAVE_URL", "http://localhost:8000/gone")  # every Statewave path 404s
+    with caplog.at_level("WARNING"):
+        await chat_with_subject(proxy)
+    assert "episode write failed for user:42" in caplog.text
+    assert "compile failed" not in caplog.text
+
+
 async def test_shutdown_drains_writes_then_closes_client(calls, proxy, trusted):
     # No drain() here on purpose: shutdown is what has to finish the write,
     # and it has to do it before the client is closed under it.

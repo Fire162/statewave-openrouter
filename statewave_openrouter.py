@@ -362,14 +362,20 @@ async def _write_turn(subject, session_id, user_text, reply, model, headers) -> 
     try:
         response = await client.post(f"{STATEWAVE_URL}/v1/episodes", json=episode, headers=headers)
         response.raise_for_status()
-        if COMPILE_AFTER_TURN:
-            await client.post(
-                f"{STATEWAVE_URL}/v1/memories/compile",
-                json={"subject_id": subject, "async": True},
-                headers=headers,
-            )
     except Exception as exc:  # noqa: BLE001 - a failed write must not break the chat
         log.warning("statewave episode write failed for %s: %s", subject, exc)
+        return
+    if not COMPILE_AFTER_TURN:
+        return
+    try:
+        compiled = await client.post(
+            f"{STATEWAVE_URL}/v1/memories/compile",
+            json={"subject_id": subject, "async": True},
+            headers=headers,
+        )
+        compiled.raise_for_status()
+    except Exception as exc:  # noqa: BLE001 - a failed compile must not break the chat
+        log.warning("statewave compile failed for %s: %s", subject, exc)
 
 
 def _resolve_subject(
