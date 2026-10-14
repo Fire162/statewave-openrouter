@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import gzip
+import importlib
 import json
 import time
 
@@ -750,7 +751,11 @@ async def test_startup_is_quiet_when_statewave_is_current(monkeypatch, caplog):
 
 
 def test_default_statewave_url_port(monkeypatch):
+    # STATEWAVE_URL is read at import time, so deleting it from the environment does
+    # nothing to the already-bound module attribute: without the reload this asserts
+    # whatever the ambient environment happens to hold, and fails for any contributor
+    # who has STATEWAVE_URL exported. Kept last in the file so the reload has nothing
+    # downstream of it.
     monkeypatch.delenv("STATEWAVE_URL", raising=False)
-    assert "8100" in sw.STATEWAVE_URL
-    assert sw.STATEWAVE_URL == "http://localhost:8100"
+    assert importlib.reload(sw).STATEWAVE_URL == "http://localhost:8100"
 
